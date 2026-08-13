@@ -28,8 +28,9 @@ import asyncio
 import os
 from typing import TYPE_CHECKING, Dict, Optional, Set
 
+from jupyter_server.auth.decorator import ws_authenticated
 from jupyter_server.base.handlers import JupyterHandler
-from tornado import web, websocket
+from tornado import websocket
 from watchfiles import awatch
 
 from .ws_schema import (
@@ -188,15 +189,8 @@ class LiveContentWebSocketHandler(JupyterHandler, websocket.WebSocketHandler):
     def manager(self) -> LiveContentManager:
         return self.settings[MANAGER_SETTINGS_KEY]
 
-    def pre_get(self) -> None:
-        """Authenticate before upgrading to a WebSocket."""
-        user = self.current_user
-        if user is None:
-            self.log.warning("live-content: unauthenticated WebSocket connection")
-            raise web.HTTPError(403)
-
+    @ws_authenticated
     async def get(self, *args, **kwargs):
-        self.pre_get()
         res = super().get(*args, **kwargs)
         if res is not None:
             await res
