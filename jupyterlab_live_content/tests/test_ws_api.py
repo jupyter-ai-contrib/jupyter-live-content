@@ -2,6 +2,7 @@ import logging
 import os
 
 from jupyterlab_live_content.ws_api import LiveContentManager
+from jupyterlab_live_content.ws_schema import ServerUpdate
 
 
 class FakeClient:
@@ -18,6 +19,11 @@ def make_manager(root="/tmp/live-root"):
     return LiveContentManager(root_dir=root, log=logging.getLogger("test"))
 
 
+def _emit(mgr, path):
+    """Route a coarse server_update synchronously (no ContentsManager)."""
+    mgr._route(path, ServerUpdate(path=path))
+
+
 def test_broadcast_only_reaches_subscribed_clients():
     mgr = make_manager()
     c1, c2 = FakeClient(), FakeClient()
@@ -28,16 +34,16 @@ def test_broadcast_only_reaches_subscribed_clients():
     mgr.subscribe(c2, "a.txt")
     mgr.subscribe(c2, "b.txt")
 
-    mgr.broadcast_update("a.txt")
-    assert c1.sent == [{"path": "a.txt", "type": "server_update"}]
-    assert c2.sent == [{"path": "a.txt", "type": "server_update"}]
+    _emit(mgr, "a.txt")
+    assert [m["path"] for m in c1.sent] == ["a.txt"]
+    assert [m["path"] for m in c2.sent] == ["a.txt"]
 
-    mgr.broadcast_update("b.txt")
+    _emit(mgr, "b.txt")
     assert len(c1.sent) == 1  # not subscribed to b.txt
     assert len(c2.sent) == 2
 
     # A path nobody has open reaches nobody.
-    mgr.broadcast_update("unopened.txt")
+    _emit(mgr, "unopened.txt")
     assert len(c1.sent) == 1
     assert len(c2.sent) == 2
 
@@ -49,13 +55,13 @@ def test_unsubscribe_and_disconnect_stop_updates():
     mgr.subscribe(c1, "a.txt")
 
     mgr.unsubscribe(c1, "a.txt")
-    mgr.broadcast_update("a.txt")
+    _emit(mgr, "a.txt")
     assert c1.sent == []
 
     # Re-subscribe then fully disconnect: the client is dropped from all paths.
     mgr.subscribe(c1, "a.txt")
     mgr.remove_client(c1)
-    mgr.broadcast_update("a.txt")
+    _emit(mgr, "a.txt")
     assert c1.sent == []
 
 

@@ -6,6 +6,9 @@ from jupyterlab_live_content import ws_schema as s
 def test_serialize_server_update():
     assert s.to_wire(s.ServerUpdate(path="a/b.txt")) == {
         "path": "a/b.txt",
+        "last_modified": None,
+        "hash": None,
+        "hash_algorithm": None,
         "type": "server_update",
     }
 

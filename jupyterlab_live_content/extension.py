@@ -46,7 +46,15 @@ def _load_jupyter_server_extension(server_app) -> None:
     """
     web_app = server_app.web_app
 
-    manager = LiveContentManager(root_dir=_get_root_dir(server_app), log=server_app.log)
+    contents_manager = getattr(server_app, "contents_manager", None)
+    if contents_manager is None:
+        contents_manager = web_app.settings.get("contents_manager")
+
+    manager = LiveContentManager(
+        root_dir=_get_root_dir(server_app),
+        log=server_app.log,
+        contents_manager=contents_manager,
+    )
     web_app.settings[MANAGER_SETTINGS_KEY] = manager
 
     base_url = web_app.settings["base_url"]

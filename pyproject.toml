@@ -25,6 +25,7 @@ classifiers = [
 dependencies = [
     "jupyter_server>=2.13.0,<3",
     "watchfiles>=0.21",
+    "blake3>=0.4",
 ]
 dynamic = ["version", "description", "authors", "urls", "keywords"]
 
