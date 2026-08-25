@@ -10,6 +10,7 @@ import {
 import { IDocumentWidget } from '@jupyterlab/docregistry';
 
 import { LiveContentConnector } from './connector';
+import { applyServerUpdate } from './applier';
 import { LiveDocumentRegistry } from './registry';
 import { ILiveContentConnector, ILiveDocumentRegistry } from './tokens';
 
@@ -110,10 +111,9 @@ const trackerPlugin: JupyterFrontEndPlugin<ILiveDocumentRegistry> = {
  * Plugin 3 - the applier.
  *
  * Requires both the connector and the registry. On a `server_update` for a path
- * we have open, it reloads the document from disk via `context.revert()` -
- * unless the document has unsaved changes, in which case we leave it alone and
- * let JupyterLab's native save-conflict dialog handle the divergence at save
- * time.
+ * we have open, it delegates to `applyServerUpdate` (see `applier.ts`), which
+ * reloads the document from disk unless it is excluded (e.g. notebooks) or has
+ * unsaved changes.
  */
 const applierPlugin: JupyterFrontEndPlugin<void> = {
   id: `${PLUGIN_NAMESPACE}:applier`,
@@ -129,19 +129,7 @@ const applierPlugin: JupyterFrontEndPlugin<void> = {
       if (message.type !== 'server_update') {
         return;
       }
-      const widget = registry.get(message.path);
-      if (!widget) {
-        return;
-      }
-      const context = widget.context;
-      if (context.model.dirty) {
-        // Unsaved local changes: don't clobber them. The native save-conflict
-        // dialog will surface the divergence when the user next saves.
-        return;
-      }
-      context.revert().catch(err => {
-        console.error(`live-content: failed to revert ${message.path}`, err);
-      });
+      applyServerUpdate(registry, message.path);
     });
 
     console.log(`${PLUGIN_NAMESPACE}:applier is activated`);
