@@ -112,8 +112,8 @@ const trackerPlugin: JupyterFrontEndPlugin<ILiveDocumentRegistry> = {
  *
  * Requires both the connector and the registry. On a `server_update` for a path
  * we have open, it delegates to `applyServerUpdate` (see `applier.ts`), which
- * reloads the document from disk unless it is excluded (e.g. notebooks) or has
- * unsaved changes.
+ * reloads the document from disk only when it is eligible for live updates (a
+ * simple file editor or a read-only viewer) and not dirty.
  */
 const applierPlugin: JupyterFrontEndPlugin<void> = {
   id: `${PLUGIN_NAMESPACE}:applier`,

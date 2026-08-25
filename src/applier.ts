@@ -1,16 +1,15 @@
-import { isExcludedFromLiveUpdates } from './exclusions';
+import { isEligibleForLiveUpdate } from './eligibility';
 import { ILiveDocumentRegistry } from './tokens';
 
 /**
  * Core of the applier plugin: given a `server_update` for `path`, reload the
- * matching open document from disk via `context.revert()` - unless the
- * document is either
+ * matching open document from disk via `context.revert()` - but only when
  *
- * - excluded from live updates (e.g. notebooks, whose revert is unsafe - see
- *   `isExcludedFromLiveUpdates` in `exclusions.ts`), or
- * - dirty (has unsaved local changes), in which case we leave it alone and let
- *   JupyterLab's native save-conflict dialog surface the divergence when the
- *   user next saves.
+ * - the document is eligible for live updates (a simple file editor or a
+ *   read-only viewer - see `isEligibleForLiveUpdate` in `eligibility.ts`), and
+ * - it is not dirty (has no unsaved local changes), so we never clobber the
+ *   user's work; JupyterLab's native save-conflict dialog surfaces the
+ *   divergence when the user next saves.
  *
  * Exported separately from the plugin wiring in `index.ts` so it can be
  * unit-tested without a running `JupyterFrontEnd`.
@@ -23,7 +22,7 @@ export function applyServerUpdate(
   if (!widget) {
     return;
   }
-  if (isExcludedFromLiveUpdates(widget)) {
+  if (!isEligibleForLiveUpdate(widget)) {
     return;
   }
   const context = widget.context;

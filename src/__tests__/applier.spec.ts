@@ -1,33 +1,46 @@
 import { IDocumentWidget } from '@jupyterlab/docregistry';
+import { FileEditor } from '@jupyterlab/fileeditor';
 
 import { applyServerUpdate } from '../applier';
 import { ILiveDocumentRegistry } from '../tokens';
 
+// Mock the (ESM-heavy) file editor module; the same mock backs the predicate.
+jest.mock('@jupyterlab/fileeditor', () => ({
+  FileEditor: class FileEditor {}
+}));
+
+/** Passes `instanceof FileEditor` without constructing a real one. */
+const fileEditorLike = Object.create(FileEditor.prototype);
+/** Stand-in for a non-file-editor widget (e.g. a notebook panel). */
+const otherWidget = {};
+
 /**
- * Build a fake `IDocumentWidget` exposing only what `applyServerUpdate` reads,
- * plus a jest mock for `context.revert` so we can assert whether a reload was
- * attempted.
+ * Build a fake `IDocumentWidget` exposing what `applyServerUpdate` +
+ * `isEligibleForLiveUpdate` read, plus a jest mock for `context.revert`.
  */
 function fakeWidget(options: {
   path: string;
-  contentType?: 'notebook' | 'file' | 'directory';
+  content?: unknown;
+  readOnly?: boolean;
+  collaborative?: boolean;
   dirty?: boolean;
 }): { widget: IDocumentWidget; revert: jest.Mock } {
   const revert = jest.fn().mockResolvedValue(undefined);
-  const contentsModel =
-    options.contentType === undefined ? null : { type: options.contentType };
   const widget = {
+    content: options.content ?? fileEditorLike,
     context: {
       path: options.path,
-      contentsModel,
-      model: { dirty: options.dirty ?? false },
-      revert
+      revert,
+      model: {
+        dirty: options.dirty ?? false,
+        readOnly: options.readOnly ?? false,
+        collaborative: options.collaborative ?? false
+      }
     }
   } as unknown as IDocumentWidget;
   return { widget, revert };
 }
 
-/** A minimal registry backed by a Map, exposing only `get`. */
 function fakeRegistry(
   entries: Array<[string, IDocumentWidget]>
 ): ILiveDocumentRegistry {
@@ -36,61 +49,49 @@ function fakeRegistry(
 }
 
 describe('applyServerUpdate', () => {
-  it('reverts a clean, non-excluded document', () => {
-    const { widget, revert } = fakeWidget({
-      path: 'notes.txt',
-      contentType: 'file'
-    });
-    const registry = fakeRegistry([['notes.txt', widget]]);
-
-    applyServerUpdate(registry, 'notes.txt');
-
+  it('reverts a clean, plain file editor', () => {
+    const { widget, revert } = fakeWidget({ path: 'notes.txt' });
+    applyServerUpdate(fakeRegistry([['notes.txt', widget]]), 'notes.txt');
     expect(revert).toHaveBeenCalledTimes(1);
   });
 
-  it('does NOT revert a notebook (excluded)', () => {
+  it('reverts a read-only viewer', () => {
+    const { widget, revert } = fakeWidget({
+      path: 'data.csv',
+      content: otherWidget,
+      readOnly: true
+    });
+    applyServerUpdate(fakeRegistry([['data.csv', widget]]), 'data.csv');
+    expect(revert).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT revert a notebook / non-file-editor widget', () => {
     const { widget, revert } = fakeWidget({
       path: 'work.ipynb',
-      contentType: 'notebook'
+      content: otherWidget
     });
-    const registry = fakeRegistry([['work.ipynb', widget]]);
-
-    applyServerUpdate(registry, 'work.ipynb');
-
+    applyServerUpdate(fakeRegistry([['work.ipynb', widget]]), 'work.ipynb');
     expect(revert).not.toHaveBeenCalled();
   });
 
-  it('does NOT revert a notebook even when clean and marked as a plain file type', () => {
-    // Guards against contentsModel being unavailable: the .ipynb extension
-    // alone must keep the notebook out of the revert path.
-    const { widget, revert } = fakeWidget({ path: 'work.ipynb' });
-    const registry = fakeRegistry([['work.ipynb', widget]]);
-
-    applyServerUpdate(registry, 'work.ipynb');
-
-    expect(revert).not.toHaveBeenCalled();
-  });
-
-  it('does NOT revert a dirty document', () => {
+  it('does NOT revert a collaborative (RTC-backed) document', () => {
     const { widget, revert } = fakeWidget({
       path: 'notes.txt',
-      contentType: 'file',
-      dirty: true
+      collaborative: true
     });
-    const registry = fakeRegistry([['notes.txt', widget]]);
+    applyServerUpdate(fakeRegistry([['notes.txt', widget]]), 'notes.txt');
+    expect(revert).not.toHaveBeenCalled();
+  });
 
-    applyServerUpdate(registry, 'notes.txt');
-
+  it('does NOT revert a dirty file editor', () => {
+    const { widget, revert } = fakeWidget({ path: 'notes.txt', dirty: true });
+    applyServerUpdate(fakeRegistry([['notes.txt', widget]]), 'notes.txt');
     expect(revert).not.toHaveBeenCalled();
   });
 
   it('is a no-op when the path is not open in this client', () => {
-    const { widget, revert } = fakeWidget({
-      path: 'notes.txt',
-      contentType: 'file'
-    });
+    const { widget, revert } = fakeWidget({ path: 'notes.txt' });
     const registry = fakeRegistry([['notes.txt', widget]]);
-
     expect(() => applyServerUpdate(registry, 'other.txt')).not.toThrow();
     expect(revert).not.toHaveBeenCalled();
   });

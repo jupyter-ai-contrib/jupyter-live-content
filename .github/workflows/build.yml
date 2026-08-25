@@ -157,6 +157,33 @@ jobs:
           ui-tests/test-results
           ui-tests/playwright-report
 
+  rtc-tests:
+    name: RTC disable/enable matrix (nox)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Base Setup
+      uses: jupyterlab/maintainer-tools/.github/actions/base-setup@v1
+
+    - name: Install nox and the JS build backend
+      run: python -m pip install -U nox "jupyter-builder>=1.2.0,<2"
+
+    - name: Build the labextension once
+      # So each nox venv's editable install skips the JS build (skip-if-exists)
+      # and the RTC sessions stay fast and hermetic.
+      run: |
+        set -eux
+        jlpm
+        jlpm build
+
+    - name: Run the RTC disable/enable matrix
+      # Verifies the server extension disables itself iff an RTC provider is
+      # active, across: no provider; jupyter_server_ydoc enabled; ydoc installed
+      # but disabled; ydoc enabled with disable_rtc trait; jupyter_server_documents.
+      run: nox -s rtc
+
   check_links:
     name: Check Links
     runs-on: ubuntu-latest

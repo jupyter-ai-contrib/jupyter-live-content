@@ -1,8 +1,15 @@
-import { URLExt } from '@jupyterlab/coreutils';
+import { PageConfig, URLExt } from '@jupyterlab/coreutils';
 import { ServerConnection } from '@jupyterlab/services';
 import { Signal } from '@lumino/signaling';
 
 import { ILiveContentConnector, LiveContentMessage } from './tokens';
+
+/**
+ * ``PageConfig`` key the server extension sets to ``true`` when it disabled
+ * itself (e.g. because a real-time-collaboration provider is active). Mirrors
+ * ``PAGE_CONFIG_DISABLED_KEY`` in ``jupyterlab_live_content/extension.py``.
+ */
+const DISABLED_PAGE_CONFIG_KEY = 'liveContentServerDisabled';
 
 /**
  * Manages a single WebSocket connection to the live-content server extension.
@@ -11,6 +18,10 @@ import { ILiveContentConnector, LiveContentMessage } from './tokens';
  * open. The connection auto-reconnects with a short fixed backoff; on reconnect
  * the tracker plugin does not need to do anything special because it re-sends
  * `client_opened` for every open document (see `index.ts`).
+ *
+ * If the server advertised (via `PageConfig`) that it disabled itself, the
+ * connector stays dormant: it never opens a socket (which would 404 and
+ * reconnect forever) and simply drops any messages.
  */
 export class LiveContentConnector implements ILiveContentConnector {
   constructor(serverSettings: ServerConnection.ISettings) {
@@ -18,6 +29,12 @@ export class LiveContentConnector implements ILiveContentConnector {
     this._ready = new Promise<void>(resolve => {
       this._resolveReady = resolve;
     });
+    if (PageConfig.getOption(DISABLED_PAGE_CONFIG_KEY) === 'true') {
+      // Server extension is disabled this session; do not connect.
+      this._disabled = true;
+      this._resolveReady();
+      return;
+    }
     this._connect();
   }
 
@@ -30,6 +47,9 @@ export class LiveContentConnector implements ILiveContentConnector {
   }
 
   sendMessage(message: LiveContentMessage): void {
+    if (this._disabled) {
+      return;
+    }
     const raw = JSON.stringify(message);
     if (this._ws && this._ws.readyState === WebSocket.OPEN) {
       this._ws.send(raw);
@@ -97,6 +117,7 @@ export class LiveContentConnector implements ILiveContentConnector {
   private _serverSettings: ServerConnection.ISettings;
   private _ws: WebSocket | null = null;
   private _pending: string[] = [];
+  private _disabled = false;
   private _disposed = false;
   private _ready: Promise<void>;
   private _resolveReady!: () => void;
