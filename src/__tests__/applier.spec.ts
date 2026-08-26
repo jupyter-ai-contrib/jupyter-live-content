@@ -1,5 +1,6 @@
 import { IDocumentWidget } from '@jupyterlab/docregistry';
 import { FileEditor } from '@jupyterlab/fileeditor';
+import { ImageViewer } from '@jupyterlab/imageviewer';
 import { MarkdownViewer } from '@jupyterlab/markdownviewer';
 
 import { applyServerUpdate } from '../applier';
@@ -9,6 +10,9 @@ import { ILiveDocumentRegistry } from '../tokens';
 jest.mock('@jupyterlab/fileeditor', () => ({
   FileEditor: class FileEditor {}
 }));
+jest.mock('@jupyterlab/imageviewer', () => ({
+  ImageViewer: class ImageViewer {}
+}));
 jest.mock('@jupyterlab/markdownviewer', () => ({
   MarkdownViewer: class MarkdownViewer {}
 }));
@@ -17,6 +21,8 @@ jest.mock('@jupyterlab/markdownviewer', () => ({
 const fileEditorLike = Object.create(FileEditor.prototype);
 /** Passes `instanceof MarkdownViewer`. */
 const markdownViewerLike = Object.create(MarkdownViewer.prototype);
+/** Passes `instanceof ImageViewer`. */
+const imageViewerLike = Object.create(ImageViewer.prototype);
 /** Stand-in for a non-eligible widget (e.g. a notebook panel). */
 const otherWidget = {};
 
@@ -61,13 +67,12 @@ describe('applyServerUpdate', () => {
     expect(revert).toHaveBeenCalledTimes(1);
   });
 
-  it('reverts a read-only viewer', () => {
+  it('reverts an image viewer (ImageViewer)', () => {
     const { widget, revert } = fakeWidget({
-      path: 'data.csv',
-      content: otherWidget,
-      readOnly: true
+      path: 'pic.png',
+      content: imageViewerLike
     });
-    applyServerUpdate(fakeRegistry([['data.csv', widget]]), 'data.csv');
+    applyServerUpdate(fakeRegistry([['pic.png', widget]]), 'pic.png');
     expect(revert).toHaveBeenCalledTimes(1);
   });
 
@@ -78,6 +83,16 @@ describe('applyServerUpdate', () => {
     });
     applyServerUpdate(fakeRegistry([['notes.md', widget]]), 'notes.md');
     expect(revert).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT revert a read-only notebook (read-only blocks saving, not running)', () => {
+    const { widget, revert } = fakeWidget({
+      path: 'ro.ipynb',
+      content: otherWidget,
+      readOnly: true
+    });
+    applyServerUpdate(fakeRegistry([['ro.ipynb', widget]]), 'ro.ipynb');
+    expect(revert).not.toHaveBeenCalled();
   });
 
   it('does NOT revert a notebook / non-file-editor widget', () => {

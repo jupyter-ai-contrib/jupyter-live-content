@@ -1,5 +1,6 @@
 import { IDocumentWidget } from '@jupyterlab/docregistry';
 import { FileEditor } from '@jupyterlab/fileeditor';
+import { ImageViewer } from '@jupyterlab/imageviewer';
 import { MarkdownViewer } from '@jupyterlab/markdownviewer';
 
 import { isEligibleForLiveUpdate } from '../eligibility';
@@ -9,26 +10,28 @@ import { isEligibleForLiveUpdate } from '../eligibility';
 jest.mock('@jupyterlab/fileeditor', () => ({
   FileEditor: class FileEditor {}
 }));
+jest.mock('@jupyterlab/imageviewer', () => ({
+  ImageViewer: class ImageViewer {}
+}));
 jest.mock('@jupyterlab/markdownviewer', () => ({
   MarkdownViewer: class MarkdownViewer {}
 }));
 
 /**
  * Build a minimal `IDocumentWidget` exposing only what the predicate reads:
- * `content` (for the `instanceof` checks) and
- * `context.model.{readOnly,collaborative}`.
+ * `content` (for the `instanceof` checks) and `context.model.collaborative`.
  */
 function fakeWidget(options: {
   content: unknown;
-  readOnly?: boolean;
   collaborative?: boolean;
+  readOnly?: boolean;
 }): IDocumentWidget {
   return {
     content: options.content,
     context: {
       model: {
-        readOnly: options.readOnly ?? false,
-        collaborative: options.collaborative ?? false
+        collaborative: options.collaborative ?? false,
+        readOnly: options.readOnly ?? false
       }
     }
   } as unknown as IDocumentWidget;
@@ -36,6 +39,7 @@ function fakeWidget(options: {
 
 const fileEditorLike = Object.create(FileEditor.prototype);
 const markdownViewerLike = Object.create(MarkdownViewer.prototype);
+const imageViewerLike = Object.create(ImageViewer.prototype);
 /** A stand-in for any non-eligible content (e.g. a notebook panel). */
 const otherWidget = {};
 
@@ -52,15 +56,13 @@ describe('isEligibleForLiveUpdate', () => {
     ).toBe(true);
   });
 
-  it('allows a read-only document regardless of its widget type', () => {
+  it('allows an image viewer (ImageViewer)', () => {
     expect(
-      isEligibleForLiveUpdate(
-        fakeWidget({ content: otherWidget, readOnly: true })
-      )
+      isEligibleForLiveUpdate(fakeWidget({ content: imageViewerLike }))
     ).toBe(true);
   });
 
-  it('excludes a collaborative file editor (RTC-backed)', () => {
+  it('excludes a collaborative (RTC-backed) file editor', () => {
     expect(
       isEligibleForLiveUpdate(
         fakeWidget({ content: fileEditorLike, collaborative: true })
@@ -68,17 +70,18 @@ describe('isEligibleForLiveUpdate', () => {
     ).toBe(false);
   });
 
-  it('excludes a collaborative markdown preview', () => {
-    expect(
-      isEligibleForLiveUpdate(
-        fakeWidget({ content: markdownViewerLike, collaborative: true })
-      )
-    ).toBe(false);
-  });
-
-  it('excludes a non-file-editor document (e.g. a notebook panel)', () => {
+  it('excludes a non-allowlisted document (e.g. a notebook panel)', () => {
     expect(isEligibleForLiveUpdate(fakeWidget({ content: otherWidget }))).toBe(
       false
     );
+  });
+
+  it('excludes a read-only notebook (read-only blocks saving, not running cells)', () => {
+    // A read-only .ipynb is still a NotebookPanel, not an allowlisted viewer.
+    expect(
+      isEligibleForLiveUpdate(
+        fakeWidget({ content: otherWidget, readOnly: true })
+      )
+    ).toBe(false);
   });
 });

@@ -2125,6 +2125,7 @@ __metadata:
     "@jupyterlab/docmanager": ^4.0.0
     "@jupyterlab/docregistry": ^4.0.0
     "@jupyterlab/fileeditor": ^4.0.0
+    "@jupyterlab/imageviewer": ^4.0.0
     "@jupyterlab/markdownviewer": ^4.0.0
     "@jupyterlab/services": ^7.0.0
     "@jupyterlab/testutils": ^4.0.0
@@ -2542,6 +2543,20 @@ __metadata:
     react: ^18.2.0
     regexp-match-indices: ^1.0.2
   checksum: c24ac278bbd9253a95992ac5c23a2c2cbf696aafa8f329e3a82a5f7ab766dec26c33cf39482c0de2b46c42dd2459120059b8b90dc2653e7846ba5dac8b1f6381
+  languageName: node
+  linkType: hard
+
+"@jupyterlab/imageviewer@npm:^4.0.0":
+  version: 4.6.3
+  resolution: "@jupyterlab/imageviewer@npm:4.6.3"
+  dependencies:
+    "@jupyterlab/apputils": ^4.7.3
+    "@jupyterlab/coreutils": ^6.6.3
+    "@jupyterlab/docregistry": ^4.6.3
+    "@lumino/coreutils": ^2.2.2
+    "@lumino/messaging": ^2.0.4
+    "@lumino/widgets": ^2.8.0
+  checksum: f97c714ed6d5cf8f829c808e2ba9fa80e20b1c1242df81347969f4222c0aceb317d0bff2514eaf8455f019832d3991ff25446fc07ff3ffa5db4fed458e0e364f
   languageName: node
   linkType: hard
 
