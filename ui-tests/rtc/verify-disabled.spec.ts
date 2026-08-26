@@ -35,7 +35,8 @@ test('the live-content WebSocket endpoint is not served', async ({ page }) => {
   // it would instead reject the non-upgrade request (400/403) - never 404.
   const status = await page.evaluate(async (wsPath: string) => {
     const el = document.getElementById('jupyter-config-data');
-    const baseUrl = (el && el.textContent && JSON.parse(el.textContent).baseUrl) || '/';
+    const baseUrl =
+      (el && el.textContent && JSON.parse(el.textContent).baseUrl) || '/';
     const res = await fetch(baseUrl + wsPath);
     return res.status;
   }, WS_PATH);
