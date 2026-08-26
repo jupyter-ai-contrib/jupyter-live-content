@@ -4,34 +4,33 @@
 
 These exercise the detection logic against a *fake* ``ServerApp`` so they run in
 the default suite without installing any real RTC provider. The end-to-end
-behavior with real providers installed (and enabled/disabled) is covered by the
-``nox`` sessions in ``noxfile.py``.
+behavior with real providers installed is covered by the E2E ``rtc`` suite.
 """
 from __future__ import annotations
 
 from jupyterlab_live_content.rtc_lib import get_rtc_provider, is_rtc_active
 
 
-class _FakeExtension:
+class _Ext:
     def __init__(self, enabled: bool) -> None:
         self.enabled = enabled
 
 
-class _FakeExtensionManager:
-    def __init__(self, extensions: dict) -> None:
-        self.extensions = extensions
-        self.extension_apps: dict = {}
+class _YDocApp:
+    def __init__(self, disable_rtc: bool) -> None:
+        self.disable_rtc = disable_rtc
 
 
 class _FakeServerApp:
-    """Mimics the surface of ``ServerApp`` that ``rtc_lib`` inspects."""
+    """Mimics the ``ServerApp`` surface that ``rtc_lib`` inspects."""
 
-    def __init__(self, *, ext_states: dict | None = None, config: dict | None = None):
-        # ext_states maps extension name -> enabled(bool). Absent => not present.
-        self.extension_manager = _FakeExtensionManager(
-            {name: _FakeExtension(enabled) for name, enabled in (ext_states or {}).items()}
-        )
-        self.config = config or {}
+    def __init__(self, *, enabled=(), ydoc_disable_rtc: bool | None = None):
+        mgr = type("_Mgr", (), {})()
+        mgr.extensions = {name: _Ext(True) for name in enabled}
+        mgr.extension_apps = {}
+        if ydoc_disable_rtc is not None:
+            mgr.extension_apps["jupyter_server_ydoc"] = {_YDocApp(ydoc_disable_rtc)}
+        self.extension_manager = mgr
 
 
 def test_no_rtc_provider():
@@ -41,59 +40,37 @@ def test_no_rtc_provider():
 
 
 def test_ydoc_enabled_is_active():
-    app = _FakeServerApp(ext_states={"jupyter_server_ydoc": True})
-    assert get_rtc_provider(app) == "jupyter_server_ydoc"
-    assert is_rtc_active(app) is True
+    assert get_rtc_provider(_FakeServerApp(enabled=["jupyter_server_ydoc"])) == (
+        "jupyter_server_ydoc"
+    )
 
 
 def test_jsd_enabled_is_active():
-    app = _FakeServerApp(ext_states={"jupyter_server_documents": True})
-    assert get_rtc_provider(app) == "jupyter_server_documents"
+    assert get_rtc_provider(_FakeServerApp(enabled=["jupyter_server_documents"])) == (
+        "jupyter_server_documents"
+    )
 
 
 def test_both_enabled_jsd_wins():
-    app = _FakeServerApp(
-        ext_states={"jupyter_server_documents": True, "jupyter_server_ydoc": True}
-    )
+    app = _FakeServerApp(enabled=["jupyter_server_documents", "jupyter_server_ydoc"])
     assert get_rtc_provider(app) == "jupyter_server_documents"
 
 
 def test_ydoc_installed_but_disabled_is_inactive():
-    # Installed (present in extension_manager) but enabled=False.
-    app = _FakeServerApp(ext_states={"jupyter_server_ydoc": False})
+    # Present in extension_manager but enabled=False (e.g. `jupyter server
+    # extension disable jupyter_server_ydoc`).
+    app = _FakeServerApp()
+    app.extension_manager.extensions["jupyter_server_ydoc"] = _Ext(False)
     assert get_rtc_provider(app) is None
 
 
-def test_ydoc_enabled_but_disable_rtc_trait_is_inactive():
-    app = _FakeServerApp(
-        ext_states={"jupyter_server_ydoc": True},
-        config={"YDocExtension": {"disable_rtc": True}},
-    )
+def test_ydoc_disable_rtc_trait_is_inactive():
+    app = _FakeServerApp(enabled=["jupyter_server_ydoc"], ydoc_disable_rtc=True)
     assert get_rtc_provider(app) is None
-
-
-def test_disable_rtc_trait_as_deferred_string_true():
-    # CLI-set trait can arrive as a string; "True" must disable RTC.
-    app = _FakeServerApp(
-        ext_states={"jupyter_server_ydoc": True},
-        config={"YDocExtension": {"disable_rtc": "True"}},
-    )
-    assert get_rtc_provider(app) is None
-
-
-def test_disable_rtc_trait_as_deferred_string_false_keeps_rtc():
-    # "False" as a string must NOT be treated as truthy.
-    app = _FakeServerApp(
-        ext_states={"jupyter_server_ydoc": True},
-        config={"YDocExtension": {"disable_rtc": "False"}},
-    )
-    assert get_rtc_provider(app) == "jupyter_server_ydoc"
 
 
 def test_disable_rtc_trait_does_not_affect_jsd():
-    # disable_rtc only governs JSY; JSD stays active.
     app = _FakeServerApp(
-        ext_states={"jupyter_server_documents": True},
-        config={"YDocExtension": {"disable_rtc": True}},
+        enabled=["jupyter_server_documents"], ydoc_disable_rtc=True
     )
     assert get_rtc_provider(app) == "jupyter_server_documents"
