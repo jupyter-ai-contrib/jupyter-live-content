@@ -1,17 +1,21 @@
 import { IDocumentWidget } from '@jupyterlab/docregistry';
 import { FileEditor } from '@jupyterlab/fileeditor';
+import { MarkdownViewer } from '@jupyterlab/markdownviewer';
 
 import { isEligibleForLiveUpdate } from '../eligibility';
 
-// Mock the (ESM-heavy) file editor module: we only need a class to test the
-// `instanceof FileEditor` branch. The same mock backs the predicate's import.
+// Mock the (ESM-heavy) widget modules: we only need classes to test the
+// `instanceof` branches. The same mocks back the predicate's imports.
 jest.mock('@jupyterlab/fileeditor', () => ({
   FileEditor: class FileEditor {}
+}));
+jest.mock('@jupyterlab/markdownviewer', () => ({
+  MarkdownViewer: class MarkdownViewer {}
 }));
 
 /**
  * Build a minimal `IDocumentWidget` exposing only what the predicate reads:
- * `content` (to test the `instanceof FileEditor` check) and
+ * `content` (for the `instanceof` checks) and
  * `context.model.{readOnly,collaborative}`.
  */
 function fakeWidget(options: {
@@ -30,15 +34,21 @@ function fakeWidget(options: {
   } as unknown as IDocumentWidget;
 }
 
-/** A stand-in that passes `instanceof FileEditor` without constructing one. */
 const fileEditorLike = Object.create(FileEditor.prototype);
-/** A stand-in for any non-file-editor content (e.g. a notebook panel). */
+const markdownViewerLike = Object.create(MarkdownViewer.prototype);
+/** A stand-in for any non-eligible content (e.g. a notebook panel). */
 const otherWidget = {};
 
 describe('isEligibleForLiveUpdate', () => {
   it('allows a plain (non-collaborative) file editor', () => {
     expect(
       isEligibleForLiveUpdate(fakeWidget({ content: fileEditorLike }))
+    ).toBe(true);
+  });
+
+  it('allows a markdown preview (MarkdownViewer)', () => {
+    expect(
+      isEligibleForLiveUpdate(fakeWidget({ content: markdownViewerLike }))
     ).toBe(true);
   });
 
@@ -58,14 +68,15 @@ describe('isEligibleForLiveUpdate', () => {
     ).toBe(false);
   });
 
-  it('excludes a non-file-editor document (e.g. a notebook)', () => {
-    expect(isEligibleForLiveUpdate(fakeWidget({ content: otherWidget }))).toBe(
-      false
-    );
+  it('excludes a collaborative markdown preview', () => {
+    expect(
+      isEligibleForLiveUpdate(
+        fakeWidget({ content: markdownViewerLike, collaborative: true })
+      )
+    ).toBe(false);
   });
 
-  it('excludes a non-file-editor, non-read-only, non-collaborative document', () => {
-    // e.g. a custom editable widget we don't understand: safe default is skip.
+  it('excludes a non-file-editor document (e.g. a notebook panel)', () => {
     expect(isEligibleForLiveUpdate(fakeWidget({ content: otherWidget }))).toBe(
       false
     );

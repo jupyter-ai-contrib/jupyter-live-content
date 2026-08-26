@@ -1,5 +1,6 @@
 import { IDocumentWidget } from '@jupyterlab/docregistry';
 import { FileEditor } from '@jupyterlab/fileeditor';
+import { MarkdownViewer } from '@jupyterlab/markdownviewer';
 
 /**
  * Allowlist: decide whether an open document is eligible to be reloaded from
@@ -12,12 +13,15 @@ import { FileEditor } from '@jupyterlab/fileeditor';
  *   etc. There is no in-memory user state to clobber.
  * - **Simple file editors** (`FileEditor`): plain text / code / markdown, as
  *   long as they are *not* backed by a collaborative (RTC) model - a plain
- *   `revert()` just reloads the text buffer.
+ *   `revert()` just reloads the text buffer. This also covers a notebook opened
+ *   with "Open With -> Editor" (a `FileEditor` over the `.ipynb`).
+ * - **Markdown previews** (`MarkdownViewer`): reverting re-renders the view from
+ *   the reloaded text; there is no editable state to lose.
  *
  * Everything else is excluded, because reverting it is unsafe:
  *
- * - **Notebooks** - `revert()` discards outputs, execution counts, cell IDs, and
- *   the running-kernel association (see #2, #5).
+ * - **Notebooks** (the `NotebookPanel` view) - `revert()` discards outputs,
+ *   execution counts, cell IDs, and the running-kernel association (see #2, #5).
  * - **Chat files** and other extension-owned documents whose canonical state is
  *   not the bytes on disk (see #3).
  * - **Collaborative / RTC-backed documents** (JupyterGIS, JupyterCAD, ...) whose
@@ -40,6 +44,9 @@ export function isEligibleForLiveUpdate(widget: IDocumentWidget): boolean {
     return false;
   }
 
-  // Otherwise, only plain file editors are safe to reload.
-  return widget.content instanceof FileEditor;
+  // Otherwise, only plain file editors and markdown previews are safe to reload.
+  return (
+    widget.content instanceof FileEditor ||
+    widget.content instanceof MarkdownViewer
+  );
 }

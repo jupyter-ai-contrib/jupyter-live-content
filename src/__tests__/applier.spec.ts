@@ -1,17 +1,23 @@
 import { IDocumentWidget } from '@jupyterlab/docregistry';
 import { FileEditor } from '@jupyterlab/fileeditor';
+import { MarkdownViewer } from '@jupyterlab/markdownviewer';
 
 import { applyServerUpdate } from '../applier';
 import { ILiveDocumentRegistry } from '../tokens';
 
-// Mock the (ESM-heavy) file editor module; the same mock backs the predicate.
+// Mock the (ESM-heavy) widget modules; the same mocks back the predicate.
 jest.mock('@jupyterlab/fileeditor', () => ({
   FileEditor: class FileEditor {}
+}));
+jest.mock('@jupyterlab/markdownviewer', () => ({
+  MarkdownViewer: class MarkdownViewer {}
 }));
 
 /** Passes `instanceof FileEditor` without constructing a real one. */
 const fileEditorLike = Object.create(FileEditor.prototype);
-/** Stand-in for a non-file-editor widget (e.g. a notebook panel). */
+/** Passes `instanceof MarkdownViewer`. */
+const markdownViewerLike = Object.create(MarkdownViewer.prototype);
+/** Stand-in for a non-eligible widget (e.g. a notebook panel). */
 const otherWidget = {};
 
 /**
@@ -62,6 +68,15 @@ describe('applyServerUpdate', () => {
       readOnly: true
     });
     applyServerUpdate(fakeRegistry([['data.csv', widget]]), 'data.csv');
+    expect(revert).toHaveBeenCalledTimes(1);
+  });
+
+  it('reverts a markdown preview (MarkdownViewer)', () => {
+    const { widget, revert } = fakeWidget({
+      path: 'notes.md',
+      content: markdownViewerLike
+    });
+    applyServerUpdate(fakeRegistry([['notes.md', widget]]), 'notes.md');
     expect(revert).toHaveBeenCalledTimes(1);
   });
 

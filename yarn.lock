@@ -2125,6 +2125,7 @@ __metadata:
     "@jupyterlab/docmanager": ^4.0.0
     "@jupyterlab/docregistry": ^4.0.0
     "@jupyterlab/fileeditor": ^4.0.0
+    "@jupyterlab/markdownviewer": ^4.0.0
     "@jupyterlab/services": ^7.0.0
     "@jupyterlab/testutils": ^4.0.0
     "@lumino/coreutils": ^2.0.0
@@ -2564,6 +2565,24 @@ __metadata:
     vscode-languageserver-protocol: ^3.17.0
     vscode-ws-jsonrpc: ~1.0.2
   checksum: f1b8eede90afdc52ed1a32985b9c760f4ac59f16a295746b8a648b0f8bac73cc158744ee2f34d2fd87088fedb7305b785a6357bcfe56c1143eeb906c0fdf2dad
+  languageName: node
+  linkType: hard
+
+"@jupyterlab/markdownviewer@npm:^4.0.0":
+  version: 4.6.3
+  resolution: "@jupyterlab/markdownviewer@npm:4.6.3"
+  dependencies:
+    "@jupyterlab/apputils": ^4.7.3
+    "@jupyterlab/coreutils": ^6.6.3
+    "@jupyterlab/docregistry": ^4.6.3
+    "@jupyterlab/rendermime": ^4.6.3
+    "@jupyterlab/toc": ^6.6.3
+    "@jupyterlab/translation": ^4.6.3
+    "@lumino/coreutils": ^2.2.2
+    "@lumino/messaging": ^2.0.4
+    "@lumino/signaling": ^2.1.5
+    "@lumino/widgets": ^2.8.0
+  checksum: 415ca4c12431103564f59f872e5f8a1fce8d1a0543f62dd34e0ebe4f9a989789ff2fc2bfde0c81a8281cbfdcdf65ec101d75876badf3412e8cdc904a47916532
   languageName: node
   linkType: hard
 
