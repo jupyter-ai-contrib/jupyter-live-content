@@ -4,7 +4,7 @@ import { ISignal } from '@lumino/signaling';
 
 /**
  * The WebSocket message protocol, mirrored from the Python dataclasses in
- * `jupyterlab_live_content/ws_schema.py`.
+ * `jupyter_live_content/ws_schema.py`.
  *
  * client -> server: `client_opened`, `client_closed`
  * server -> client: `server_update`
@@ -16,7 +16,7 @@ export type LiveContentMessage =
 
 /**
  * The transport plugin. Owns the single WebSocket connection to the
- * `jupyterlab-live-content/ws` endpoint and exposes typed send/receive.
+ * `api/live-content/ws` endpoint and exposes typed send/receive.
  */
 export interface ILiveContentConnector {
   /** Emitted for every message received from the server. */

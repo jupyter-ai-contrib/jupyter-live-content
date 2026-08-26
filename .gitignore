@@ -7,9 +7,9 @@ node_modules/
 *.egg-info/
 .ipynb_checkpoints
 *.tsbuildinfo
-jupyterlab_live_content/labextension
+jupyter_live_content/labextension
 # Version file is handled by hatchling
-jupyterlab_live_content/_version.py
+jupyter_live_content/_version.py
 
 # Integration tests
 ui-tests/test-results/
@@ -126,3 +126,6 @@ dmypy.json
 
 # Yarn cache
 .yarn/
+
+# jest junit reporter output
+junit.xml

@@ -3,6 +3,6 @@ node_modules
 **/lib
 **/package.json
 !/package.json
-jupyterlab_live_content
+jupyter_live_content
 eslint.config.mjs
 .venv

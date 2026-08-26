@@ -1,7 +1,7 @@
 import logging
 import os
 
-from jupyterlab_live_content.ws_api import LiveContentManager
+from jupyter_live_content.ws_api import LiveContentManager
 
 
 class FakeClient:

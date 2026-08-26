@@ -12,7 +12,7 @@ The `jlpm` command is JupyterLab's pinned version of
 
 ```bash
 # Clone the repo to your local environment
-# Change directory to the jupyterlab_live_content directory
+# Change directory to the jupyter_live_content directory
 
 # Set up a virtual environment and install package in development mode
 python -m venv .venv
@@ -22,7 +22,7 @@ pip install --editable ".[dev,test]"
 # Link your development version of the extension with JupyterLab
 jupyter-builder develop . --overwrite
 # Server extension must be manually installed in develop mode
-jupyter server extension enable jupyterlab_live_content
+jupyter server extension enable jupyter_live_content
 
 # Rebuild extension Typescript source after making changes
 # IMPORTANT: Unlike the steps above which are performed only once, do this step
@@ -51,8 +51,8 @@ jupyter lab build --minimize=False
 
 ```bash
 # Server extension must be manually disabled in develop mode
-jupyter server extension disable jupyterlab_live_content
-pip uninstall jupyterlab_live_content
+jupyter server extension disable jupyter_live_content
+pip uninstall jupyter_live_content
 ```
 
 In development mode, you will also need to remove the symlink created by `jupyter-builder develop`
@@ -87,7 +87,7 @@ jupyter-builder develop . --overwrite
 To execute them, run:
 
 ```sh
-pytest -vv -r ap --cov jupyterlab_live_content
+pytest -vv -r ap --cov jupyter_live_content
 ```
 
 #### Frontend tests

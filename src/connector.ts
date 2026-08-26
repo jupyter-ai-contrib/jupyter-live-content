@@ -7,7 +7,7 @@ import { ILiveContentConnector, LiveContentMessage } from './tokens';
 /**
  * ``PageConfig`` key the server extension sets to ``true`` when it disabled
  * itself (e.g. because a real-time-collaboration provider is active). Mirrors
- * ``PAGE_CONFIG_DISABLED_KEY`` in ``jupyterlab_live_content/extension.py``.
+ * ``PAGE_CONFIG_DISABLED_KEY`` in ``jupyter_live_content/extension.py``.
  */
 const DISABLED_PAGE_CONFIG_KEY = 'liveContentServerDisabled';
 
@@ -60,7 +60,7 @@ export class LiveContentConnector implements ILiveContentConnector {
 
   private _connect(): void {
     const settings = this._serverSettings;
-    let url = URLExt.join(settings.wsUrl, 'jupyterlab-live-content', 'ws');
+    let url = URLExt.join(settings.wsUrl, 'api', 'live-content', 'ws');
     // Same-origin requests authenticate via cookie/xsrf, but token auth (used
     // by the test server and many deployments) needs the token on the query.
     if (settings.token) {

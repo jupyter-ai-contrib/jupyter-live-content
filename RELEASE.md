@@ -1,4 +1,4 @@
-# Making a new release of jupyterlab_live_content
+# Making a new release of jupyter_live_content
 
 The extension can be published to `PyPI` and `npm` manually or using the [Jupyter Releaser](https://github.com/jupyter-server/jupyter_releaser).
 

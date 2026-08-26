@@ -183,7 +183,7 @@ class LiveContentManager:
 
 
 class LiveContentWebSocketHandler(JupyterHandler, websocket.WebSocketHandler):
-    """WebSocket endpoint at ``/jupyterlab-live-content/ws``."""
+    """WebSocket endpoint at ``/api/live-content/ws``."""
 
     @property
     def manager(self) -> LiveContentManager:

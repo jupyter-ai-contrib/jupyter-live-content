@@ -1,4 +1,4 @@
-# jupyterlab_live_content
+# jupyter_live_content
 
 [![Github Actions Status](https://github.com/jupyter-ai-contrib/jupyterlab-live-content/workflows/Build/badge.svg)](https://github.com/jupyter-ai-contrib/jupyterlab-live-content/actions/workflows/build.yml)
 
@@ -8,7 +8,7 @@ agent or another process rewrites it — this extension reloads the document in
 the browser so what you see stays current, without requiring real-time
 collaboration (RTC).
 
-This extension is composed of a Python package named `jupyterlab_live_content`
+This extension is composed of a Python package named `jupyter_live_content`
 for the server extension and a NPM package named `@jupyter-ai-contrib/live-content`
 for the frontend extension.
 
@@ -66,7 +66,7 @@ or the `disable_rtc` trait), this extension stays active.
 To install the extension, execute:
 
 ```bash
-pip install jupyterlab_live_content
+pip install jupyter_live_content
 ```
 
 ## Uninstall
@@ -74,7 +74,7 @@ pip install jupyterlab_live_content
 To remove the extension, execute:
 
 ```bash
-pip uninstall jupyterlab_live_content
+pip uninstall jupyter_live_content
 ```
 
 ## Troubleshoot

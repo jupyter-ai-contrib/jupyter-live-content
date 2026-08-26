@@ -40,9 +40,9 @@ jobs:
         set -eux
         python -m pip install .[test]
 
-        pytest -vv -r ap --cov jupyterlab_live_content
+        pytest -vv -r ap --cov jupyter_live_content
         jupyter server extension list
-        jupyter server extension list 2>&1 | grep -ie "jupyterlab_live_content.*OK"
+        jupyter server extension list 2>&1 | grep -ie "jupyter_live_content.*OK"
 
         jupyter labextension list
         jupyter labextension list 2>&1 | grep -ie "@jupyter-ai-contrib/live-content.*OK"
@@ -59,13 +59,13 @@ jobs:
 
         pip install build
         python -m build
-        pip uninstall -y "jupyterlab_live_content" jupyterlab
+        pip uninstall -y "jupyter_live_content" jupyterlab
 
     - name: Upload extension packages
       uses: actions/upload-artifact@v4
       with:
         name: extension-artifacts
-        path: dist/jupyterlab_live_content*
+        path: dist/jupyter_live_content*
         if-no-files-found: error
 
   test_isolated:
@@ -88,11 +88,11 @@ jobs:
         sudo rm -rf $(which node)
         sudo rm -rf $(which node)
 
-        pip install "jupyterlab>=4.0.0,<5" jupyterlab_live_content*.whl
+        pip install "jupyterlab>=4.0.0,<5" jupyter_live_content*.whl
 
 
         jupyter server extension list
-        jupyter server extension list 2>&1 | grep -ie "jupyterlab_live_content.*OK"
+        jupyter server extension list 2>&1 | grep -ie "jupyter_live_content.*OK"
 
         jupyter labextension list
         jupyter labextension list 2>&1 | grep -ie "@jupyter-ai-contrib/live-content.*OK"
@@ -138,7 +138,7 @@ jobs:
     - name: Install the extension (and any RTC provider under test)
       run: |
         set -eux
-        python -m pip install "jupyterlab>=4.0.0,<5" jupyterlab_live_content*.whl ${{ matrix.rtc_package }}
+        python -m pip install "jupyterlab>=4.0.0,<5" jupyter_live_content*.whl ${{ matrix.rtc_package }}
 
     - name: Install dependencies
       working-directory: ui-tests
@@ -173,7 +173,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: jupyterlab_live_content-playwright-tests-${{ matrix.slug }}
+        name: jupyter_live_content-playwright-tests-${{ matrix.slug }}
         path: |
           ui-tests/test-results
           ui-tests/playwright-report

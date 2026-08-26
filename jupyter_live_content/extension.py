@@ -1,9 +1,9 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
-"""Server extension entrypoint for ``jupyterlab-live-content``.
+"""Server extension entrypoint for ``jupyter-live-content``.
 
-Wires up the :class:`~jupyterlab_live_content.ws_api.LiveContentManager` and
-registers the WebSocket handler at ``/jupyterlab-live-content/ws``.
+Wires up the :class:`~jupyter_live_content.ws_api.LiveContentManager` and
+registers the WebSocket handler at ``/api/live-content/ws``.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from .ws_api import (
 )
 
 #: URL namespace for this extension's handlers.
-API_NAMESPACE = "jupyterlab-live-content"
+API_NAMESPACE = "api/live-content"
 
 #: ``PageConfig`` key advertising whether the server disabled itself. The
 #: frontend reads this to avoid opening a WebSocket that will never be served.
@@ -47,7 +47,7 @@ def _load_jupyter_server_extension(server_app) -> None:
     If a real-time-collaboration (RTC) provider is active this session, the
     extension disables itself: RTC already delivers live updates via its shared
     document, so watching the filesystem and reverting on top would be redundant
-    and could fight the provider. See :mod:`jupyterlab_live_content.rtc_lib`.
+    and could fight the provider. See :mod:`jupyter_live_content.rtc_lib`.
 
     Parameters
     ----------
@@ -61,7 +61,7 @@ def _load_jupyter_server_extension(server_app) -> None:
     if rtc_provider is not None:
         page_config[PAGE_CONFIG_DISABLED_KEY] = True
         server_app.log.info(
-            "jupyterlab_live_content: RTC provider %r is active; disabling "
+            "jupyter_live_content: RTC provider %r is active; disabling "
             "live-content (RTC already provides live updates).",
             rtc_provider,
         )
@@ -76,4 +76,4 @@ def _load_jupyter_server_extension(server_app) -> None:
     ws_route = url_path_join(base_url, API_NAMESPACE, "ws")
     web_app.add_handlers(".*$", [(ws_route, LiveContentWebSocketHandler)])
 
-    server_app.log.info("Registered jupyterlab_live_content server extension")
+    server_app.log.info("Registered jupyter_live_content server extension")

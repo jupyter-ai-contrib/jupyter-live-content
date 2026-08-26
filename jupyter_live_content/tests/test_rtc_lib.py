@@ -1,6 +1,6 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
-"""Unit tests for :mod:`jupyterlab_live_content.rtc_lib`.
+"""Unit tests for :mod:`jupyter_live_content.rtc_lib`.
 
 These exercise the detection logic against a *fake* ``ServerApp`` so they run in
 the default suite without installing any real RTC provider. The end-to-end
@@ -8,7 +8,7 @@ behavior with real providers installed is covered by the E2E ``rtc`` suite.
 """
 from __future__ import annotations
 
-from jupyterlab_live_content.rtc_lib import get_rtc_provider, is_rtc_active
+from jupyter_live_content.rtc_lib import get_rtc_provider, is_rtc_active
 
 
 class _Ext:

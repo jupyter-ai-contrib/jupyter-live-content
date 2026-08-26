@@ -1,7 +1,7 @@
 {
   "ServerApp": {
     "jpserver_extensions": {
-      "jupyterlab_live_content": true
+      "jupyter_live_content": true
     }
   }
 }

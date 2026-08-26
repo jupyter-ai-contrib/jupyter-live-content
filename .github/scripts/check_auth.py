@@ -19,7 +19,7 @@ from jupyter_server.utils import JupyterServerAuthWarning
 # unauthenticated access.
 app = ServerApp(
     allow_unauthenticated_access=False,
-    jpserver_extensions={"jupyterlab_live_content": True},
+    jpserver_extensions={"jupyter_live_content": True},
     # Fail loudly if the extension cannot be loaded at all, instead of silently
     # reporting that there is nothing to complain about.
     reraise_server_extension_failures=True,

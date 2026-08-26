@@ -1,6 +1,6 @@
 import pytest
 
-from jupyterlab_live_content import ws_schema as s
+from jupyter_live_content import ws_schema as s
 
 
 def test_serialize_server_update():

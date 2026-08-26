@@ -38,7 +38,7 @@
         "clean": "jlpm clean:lib",
         "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
         "clean:lintcache": "rimraf .eslintcache .stylelintcache",
-        "clean:labextension": "rimraf jupyterlab_live_content/labextension jupyterlab_live_content/_version.py",
+        "clean:labextension": "rimraf jupyter_live_content/labextension jupyter_live_content/_version.py",
         "clean:all": "jlpm clean:lib && jlpm clean:labextension && jlpm clean:lintcache",
         "eslint": "jlpm eslint:check --fix",
         "eslint:check": "eslint . --cache",
@@ -113,12 +113,12 @@
                     "pip"
                 ],
                 "base": {
-                    "name": "jupyterlab_live_content"
+                    "name": "jupyter_live_content"
                 }
             }
         },
         "extension": true,
-        "outputDir": "jupyterlab_live_content/labextension"
+        "outputDir": "jupyter_live_content/labextension"
     },
     "prettier": {
         "singleQuote": true,

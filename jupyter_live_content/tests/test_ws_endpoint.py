@@ -8,7 +8,7 @@ async def test_ws_broadcasts_server_update_on_disk_change(jp_ws_fetch, jp_root_d
     target = jp_root_dir / "live.txt"
     target.write_text("before")
 
-    ws = await jp_ws_fetch("jupyterlab-live-content", "ws")
+    ws = await jp_ws_fetch("api", "live-content", "ws")
     try:
         # Tell the server we have this file open. This both records the
         # subscription and (via connect) starts the filesystem watcher.

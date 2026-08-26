@@ -13,7 +13,7 @@ import { expect, test } from '@jupyterlab/galata';
 // Load JupyterLab manually so we can observe WebSockets from the first frame.
 test.use({ autoGoto: false });
 
-const WS_PATH = 'jupyterlab-live-content/ws';
+const WS_PATH = 'api/live-content/ws';
 
 function pageConfig(page: import('@playwright/test').Page): Promise<any> {
   return page.evaluate(() => {
