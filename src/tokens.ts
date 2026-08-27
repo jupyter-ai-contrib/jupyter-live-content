@@ -12,7 +12,7 @@ import { ISignal } from '@lumino/signaling';
 export type LiveContentMessage =
   | { type: 'client_opened'; path: string }
   | { type: 'client_closed'; path: string }
-  | { type: 'server_update'; path: string };
+  | { type: 'server_update'; path: string; hash?: string | null };
 
 /**
  * The transport plugin. Owns the single WebSocket connection to the

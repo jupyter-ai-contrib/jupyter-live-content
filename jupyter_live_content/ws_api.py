@@ -26,6 +26,7 @@ multi-client concern is routing, which is a plain dict of sets.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import os
 from typing import TYPE_CHECKING, Dict, Optional, Set
 
@@ -53,8 +54,12 @@ MANAGER_SETTINGS_KEY = "live_content_manager"
 class LiveContentManager:
     """Tracks open files across clients and broadcasts on-disk changes."""
 
-    def __init__(self, root_dir: str, log: "Logger") -> None:
+    def __init__(self, root_dir: str, log: "Logger", contents_manager=None) -> None:
         self.log = log
+        # Used to compute the content hash of a changed file (same algorithm the
+        # frontend sees in ``contentsModel.hash``), so a client can skip a
+        # reload when disk already matches what it has.
+        self._contents_manager = contents_manager
         # Resolve once so relative-path math against watcher events is stable.
         self.root_dir = os.path.realpath(root_dir)
 
@@ -113,12 +118,12 @@ class LiveContentManager:
 
     # -- broadcast ----------------------------------------------------------
 
-    def broadcast_update(self, path: str) -> None:
+    def broadcast_update(self, path: str, hash: Optional[str] = None) -> None:
         """Tell every client with ``path`` open that it changed on disk."""
         subs = self._subscriptions.get(path)
         if not subs:
             return
-        payload = to_wire(ServerUpdate(path=path))
+        payload = to_wire(ServerUpdate(path=path, hash=hash))
         self.log.debug(
             "live-content: broadcasting update for %r to %d client(s)",
             path,
@@ -214,7 +219,8 @@ class LiveContentManager:
                     if api_path is not None and api_path in self._subscriptions:
                         touched.add(api_path)
                 for api_path in touched:
-                    self.broadcast_update(api_path)
+                    hash = await self._content_hash(api_path)
+                    self.broadcast_update(api_path, hash)
         except asyncio.CancelledError:  # pragma: no cover - shutdown path
             raise
         except Exception:  # noqa: BLE001
@@ -225,6 +231,24 @@ class LiveContentManager:
         self._watching = False
         for directory in list(self._dir_tasks):
             self._stop_dir(directory)
+
+    async def _content_hash(self, api_path: str) -> Optional[str]:
+        """Content hash of the file at ``api_path`` per the ContentsManager, or
+        ``None`` if unavailable (in which case the client reloads).
+
+        Uses the same hash the frontend exposes as ``contentsModel.hash`` (e.g.
+        sha256), so a client can compare it against the version it already has.
+        """
+        cm = self._contents_manager
+        if cm is None:
+            return None
+        try:
+            model = cm.get(api_path, content=False, require_hash=True)
+            if inspect.isawaitable(model):
+                model = await model
+            return model.get("hash")
+        except Exception:  # noqa: BLE001 - a deleted/unreadable file just reloads
+            return None
 
     def _to_api_path(self, abspath: str) -> Optional[str]:
         """Convert an absolute filesystem path to a server API path.

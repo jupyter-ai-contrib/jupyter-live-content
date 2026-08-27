@@ -36,6 +36,7 @@ function fakeWidget(options: {
   readOnly?: boolean;
   collaborative?: boolean;
   dirty?: boolean;
+  contentsHash?: string;
 }): { widget: IDocumentWidget; revert: jest.Mock } {
   const revert = jest.fn().mockResolvedValue(undefined);
   const widget = {
@@ -43,6 +44,7 @@ function fakeWidget(options: {
     context: {
       path: options.path,
       revert,
+      contentsModel: { hash: options.contentsHash },
       model: {
         dirty: options.dirty ?? false,
         readOnly: options.readOnly ?? false,
@@ -117,6 +119,41 @@ describe('applyServerUpdate', () => {
     const { widget, revert } = fakeWidget({ path: 'notes.txt', dirty: true });
     applyServerUpdate(fakeRegistry([['notes.txt', widget]]), 'notes.txt');
     expect(revert).not.toHaveBeenCalled();
+  });
+
+  it('does NOT revert when the server hash matches what the client has (own save)', () => {
+    const { widget, revert } = fakeWidget({
+      path: 'notes.txt',
+      contentsHash: 'abc123'
+    });
+    applyServerUpdate(
+      fakeRegistry([['notes.txt', widget]]),
+      'notes.txt',
+      'abc123'
+    );
+    expect(revert).not.toHaveBeenCalled();
+  });
+
+  it('reverts when the server hash differs from what the client has', () => {
+    const { widget, revert } = fakeWidget({
+      path: 'notes.txt',
+      contentsHash: 'abc123'
+    });
+    applyServerUpdate(
+      fakeRegistry([['notes.txt', widget]]),
+      'notes.txt',
+      'zzz999'
+    );
+    expect(revert).toHaveBeenCalledTimes(1);
+  });
+
+  it('reverts when the server sends no hash (fail-safe)', () => {
+    const { widget, revert } = fakeWidget({
+      path: 'notes.txt',
+      contentsHash: 'abc123'
+    });
+    applyServerUpdate(fakeRegistry([['notes.txt', widget]]), 'notes.txt');
+    expect(revert).toHaveBeenCalledTimes(1);
   });
 
   it('is a no-op when the path is not open in this client', () => {
