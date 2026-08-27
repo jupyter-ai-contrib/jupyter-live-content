@@ -29,8 +29,8 @@ def test_broadcast_only_reaches_subscribed_clients():
     mgr.subscribe(c2, "b.txt")
 
     mgr.broadcast_update("a.txt")
-    assert c1.sent == [{"path": "a.txt", "type": "server_update"}]
-    assert c2.sent == [{"path": "a.txt", "type": "server_update"}]
+    assert c1.sent == [{"path": "a.txt", "type": "server_update", "hash": None}]
+    assert c2.sent == [{"path": "a.txt", "type": "server_update", "hash": None}]
 
     mgr.broadcast_update("b.txt")
     assert len(c1.sent) == 1  # not subscribed to b.txt

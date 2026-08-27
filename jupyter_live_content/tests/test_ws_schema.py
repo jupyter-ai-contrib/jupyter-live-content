@@ -7,6 +7,12 @@ def test_serialize_server_update():
     assert s.to_wire(s.ServerUpdate(path="a/b.txt")) == {
         "path": "a/b.txt",
         "type": "server_update",
+        "hash": None,
+    }
+    assert s.to_wire(s.ServerUpdate(path="a/b.txt", hash="deadbeef")) == {
+        "path": "a/b.txt",
+        "type": "server_update",
+        "hash": "deadbeef",
     }
 
 

@@ -22,6 +22,13 @@ async def test_ws_broadcasts_server_update_on_disk_change(jp_ws_fetch, jp_root_d
 
         raw = await asyncio.wait_for(ws.read_message(), timeout=20)
         assert raw is not None, "connection closed before an update arrived"
-        assert json.loads(raw) == {"type": "server_update", "path": "live.txt"}
+        import hashlib
+
+        expected_hash = hashlib.sha256(b"after").hexdigest()
+        assert json.loads(raw) == {
+            "type": "server_update",
+            "path": "live.txt",
+            "hash": expected_hash,
+        }
     finally:
         ws.close()

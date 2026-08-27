@@ -20,7 +20,7 @@ Direction of travel:
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 # --- message type discriminators -------------------------------------------
 
@@ -47,10 +47,18 @@ class ClientClosed:
 
 @dataclass
 class ServerUpdate:
-    """Sent by the server when the file at ``path`` changed on disk."""
+    """Sent by the server when the file at ``path`` changed on disk.
+
+    ``hash`` is the ContentsManager content hash (e.g. sha256) of the file after
+    the change. The client compares it to the hash of the version it already has
+    (``context.contentsModel.hash``) and only reloads when they differ - so a
+    client's own save, which leaves disk and model in sync, does not trigger a
+    redundant reload. ``None`` when the hash could not be computed (reload).
+    """
 
     path: str
     type: str = field(default=MSG_SERVER_UPDATE)
+    hash: Optional[str] = None
 
 
 # Messages the server accepts from a client.

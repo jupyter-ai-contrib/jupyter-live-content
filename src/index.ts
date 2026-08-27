@@ -137,7 +137,7 @@ const applierPlugin: JupyterFrontEndPlugin<void> = {
       if (message.type !== 'server_update') {
         return;
       }
-      applyServerUpdate(registry, message.path);
+      applyServerUpdate(registry, message.path, message.hash);
     });
 
     console.log(`${PLUGIN_NAMESPACE}:applier is activated`);
