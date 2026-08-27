@@ -22,6 +22,13 @@ export interface ILiveContentConnector {
   /** Emitted for every message received from the server. */
   readonly messageReceived: ISignal<ILiveContentConnector, LiveContentMessage>;
 
+  /**
+   * Emitted every time the WebSocket (re)connects. The tracker uses this to
+   * re-announce the documents this client has open, so the server's watch set
+   * is rebuilt after a reconnect.
+   */
+  readonly connected: ISignal<ILiveContentConnector, void>;
+
   /** Resolves once the WebSocket has opened for the first time. */
   readonly ready: Promise<void>;
 

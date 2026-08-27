@@ -92,6 +92,14 @@ const trackerPlugin: JupyterFrontEndPlugin<ILiveDocumentRegistry> = {
     // New opens (any file type - notebooks, text, images, ...).
     opener.opened.connect((_, widget: IDocumentWidget) => track(widget));
 
+    // On every (re)connect, re-announce the documents this client has open so
+    // the server rebuilds its watch set (e.g. after a socket drop/restart).
+    connector.connected.connect(() => {
+      for (const path of registry.widgets.keys()) {
+        connector.sendMessage({ type: 'client_opened', path });
+      }
+    });
+
     // Startup sweep: pick up documents already restored into the shell.
     if (labShell) {
       for (const widget of labShell.widgets('main')) {

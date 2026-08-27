@@ -32,3 +32,52 @@ test('open file editor reloads when its file changes on disk', async ({
   await expect(editor).toContainText(UPDATED, { timeout: 15000 });
   await expect(editor).not.toContainText(INITIAL);
 });
+
+const SAVE_FILE = 'save-no-revert.txt';
+
+test('saving local edits does not reload the document (no self-revert)', async ({
+  page,
+  tmpPath
+}) => {
+  const filePath = `${tmpPath}/${SAVE_FILE}`;
+  await page.contents.uploadContent('initial', 'text', filePath);
+
+  await page.goto();
+  await page.filebrowser.open(filePath);
+
+  const editor = page.locator('.jp-FileEditor .cm-content');
+  await expect(editor).toContainText('initial');
+
+  // Instrument this document's context.revert to count reloads.
+  await page.evaluate((p: string) => {
+    const app = (window as any).jupyterapp;
+    (window as any).__revertCount = 0;
+    for (const widget of app.shell.widgets('main')) {
+      const context = (widget as any).context;
+      if (context && context.path === p) {
+        const original = context.revert.bind(context);
+        context.revert = (...args: any[]) => {
+          (window as any).__revertCount++;
+          return original(...args);
+        };
+      }
+    }
+  }, filePath);
+
+  // Make a local edit and save it. Saving is our own write, not an out-of-band
+  // change, so it must not trigger a reload.
+  await editor.click();
+  await page.keyboard.type(' EDITED');
+  await page.evaluate(() =>
+    (window as any).jupyterapp.commands.execute('docmanager:save')
+  );
+
+  // Wait past the filesystem watcher debounce so any (unwanted) reload triggered
+  // by our own save would have fired by now.
+  await page.waitForTimeout(4000);
+
+  const revertCount = await page.evaluate(
+    () => (window as any).__revertCount as number
+  );
+  expect(revertCount).toBe(0);
+});

@@ -7,10 +7,11 @@ Two pieces live here:
 ``LiveContentManager``
     Owns the shared server-side state: the set of connected clients, the
     ``path -> {clients}`` subscription routing table, and a single background
-    :func:`watchfiles.awatch` task watching the server root directory. When a
-    watched file that some client has open changes on disk, the manager
-    broadcasts a ``server_update`` to exactly the clients subscribed to that
-    path.
+    :func:`watchfiles.awatch` task. The watcher is scoped to *only* the
+    directories of the documents clients currently have open, and re-scopes
+    itself whenever a client opens, closes, or disconnects. When a watched file
+    that some client has open changes on disk, the manager broadcasts a
+    ``server_update`` to exactly the clients subscribed to that path.
 
 ``LiveContentWebSocketHandler``
     A thin tornado WebSocket handler. It authenticates like any other Jupyter
@@ -62,9 +63,13 @@ class LiveContentManager:
         # Routing table: api path -> set of clients that have it open.
         self._subscriptions: Dict[str, Set["LiveContentWebSocketHandler"]] = {}
 
-        # Single background filesystem watcher task (started lazily).
-        self._watch_task: Optional["asyncio.Task"] = None
-        self._stop_event: Optional[asyncio.Event] = None
+        # Per-directory filesystem watchers. Each open document's directory gets
+        # its own ``awatch`` task, so opening/closing a document in one
+        # directory never interrupts the watchers for the others (no window
+        # during which events could be missed).
+        self._watching = False
+        self._dir_tasks: Dict[str, "asyncio.Task"] = {}
+        self._dir_stops: Dict[str, asyncio.Event] = {}
 
     # -- client lifecycle ---------------------------------------------------
 
@@ -85,6 +90,7 @@ class LiveContentManager:
         self.log.debug(
             "live-content: client disconnected (%d total)", len(self._clients)
         )
+        self._refresh_watch()
 
     # -- subscription routing ----------------------------------------------
 
@@ -92,6 +98,7 @@ class LiveContentManager:
         """Record that ``client`` has the document at ``path`` open."""
         self._subscriptions.setdefault(path, set()).add(client)
         self.log.debug("live-content: %s opened %r", id(client), path)
+        self._refresh_watch()
 
     def unsubscribe(self, client: "LiveContentWebSocketHandler", path: str) -> None:
         """Record that ``client`` closed the document at ``path``."""
@@ -102,6 +109,7 @@ class LiveContentManager:
         if not subs:
             del self._subscriptions[path]
         self.log.debug("live-content: %s closed %r", id(client), path)
+        self._refresh_watch()
 
     # -- broadcast ----------------------------------------------------------
 
@@ -127,43 +135,96 @@ class LiveContentManager:
 
     # -- filesystem watching ------------------------------------------------
 
-    def ensure_watching(self) -> None:
-        """Start the background watcher task if it is not already running.
+    @property
+    def watched_dirs(self) -> Set[str]:
+        """The directories the watcher monitors: the parent directory of every
+        open document, and nothing else.
 
-        Started lazily (on the first client connection) to guarantee a running
-        event loop, since ``_load_jupyter_server_extension`` may run before the
-        IOLoop starts.
+        A directory watch (rather than a per-file watch) is deliberate: editors
+        and the Contents API frequently replace a file via delete+create, which
+        would drop a watch bound to the file's inode. Watching the containing
+        directory (non-recursively) still sees the change and keeps the scope
+        minimal.
         """
-        if self._watch_task is not None and not self._watch_task.done():
-            return
-        self._stop_event = asyncio.Event()
-        self._watch_task = asyncio.ensure_future(self._watch())
-        self.log.info("live-content: watching %s for changes", self.root_dir)
+        dirs: Set[str] = set()
+        for path in self._subscriptions:
+            abspath = os.path.realpath(os.path.join(self.root_dir, path))
+            dirs.add(os.path.dirname(abspath))
+        return dirs
 
-    async def _watch(self) -> None:
+    def ensure_watching(self) -> None:
+        """Enable watching and start tasks for any already-open documents.
+
+        Called on the first client connection to guarantee a running event
+        loop, since ``_load_jupyter_server_extension`` may run before the IOLoop
+        starts. Idempotent.
+        """
+        self._watching = True
+        self._refresh_watch()
+
+    def _refresh_watch(self) -> None:
+        """Reconcile the running watcher tasks with ``watched_dirs``.
+
+        Starts a watcher for any newly-needed directory and stops the watcher
+        for any directory that no longer has an open document. Existing watchers
+        are left untouched, so growing/shrinking the set never drops events for
+        directories that remain watched. A no-op until :meth:`ensure_watching`
+        has been called (and thus outside a running event loop, e.g. in unit
+        tests).
+        """
+        if not self._watching:
+            return
+        desired = {d for d in self.watched_dirs if os.path.isdir(d)}
+        for directory in list(self._dir_tasks):
+            if directory not in desired:
+                self._stop_dir(directory)
+        for directory in desired:
+            if directory not in self._dir_tasks:
+                self._start_dir(directory)
+
+    def _start_dir(self, directory: str) -> None:
+        stop = asyncio.Event()
+        self._dir_stops[directory] = stop
+        self._dir_tasks[directory] = asyncio.ensure_future(
+            self._watch_dir(directory, stop)
+        )
+        self.log.debug("live-content: watching %s", directory)
+
+    def _stop_dir(self, directory: str) -> None:
+        stop = self._dir_stops.pop(directory, None)
+        if stop is not None:
+            stop.set()
+        task = self._dir_tasks.pop(directory, None)
+        if task is not None:
+            task.cancel()
+        self.log.debug("live-content: stopped watching %s", directory)
+
+    async def _watch_dir(self, directory: str, stop: asyncio.Event) -> None:
+        """Watch a single directory (non-recursively) and broadcast changes to
+        the open documents inside it."""
         try:
-            async for changes in awatch(self.root_dir, stop_event=self._stop_event):
-                # Deduplicate: several raw events can map to one api path.
+            async for changes in awatch(
+                directory, recursive=False, stop_event=stop
+            ):
+                # Deduplicate raw events to api paths, and only broadcast for
+                # paths a client actually has open.
                 touched = set()
                 for _change, abspath in changes:
                     api_path = self._to_api_path(abspath)
-                    if api_path is not None:
+                    if api_path is not None and api_path in self._subscriptions:
                         touched.add(api_path)
                 for api_path in touched:
-                    if api_path in self._subscriptions:
-                        self.broadcast_update(api_path)
+                    self.broadcast_update(api_path)
         except asyncio.CancelledError:  # pragma: no cover - shutdown path
             raise
         except Exception:  # noqa: BLE001
-            self.log.exception("live-content: file watcher crashed")
+            self.log.exception("live-content: watcher for %s crashed", directory)
 
     def stop(self) -> None:
-        """Signal the watcher to stop. Safe to call if never started."""
-        if self._stop_event is not None:
-            self._stop_event.set()
-        if self._watch_task is not None:
-            self._watch_task.cancel()
-            self._watch_task = None
+        """Stop all watchers. Safe to call if never started."""
+        self._watching = False
+        for directory in list(self._dir_tasks):
+            self._stop_dir(directory)
 
     def _to_api_path(self, abspath: str) -> Optional[str]:
         """Convert an absolute filesystem path to a server API path.

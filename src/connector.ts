@@ -42,6 +42,10 @@ export class LiveContentConnector implements ILiveContentConnector {
     return this._messageReceived;
   }
 
+  get connected(): Signal<this, void> {
+    return this._connected;
+  }
+
   get ready(): Promise<void> {
     return this._ready;
   }
@@ -76,6 +80,8 @@ export class LiveContentConnector implements ILiveContentConnector {
         ws.send(this._pending.shift() as string);
       }
       this._resolveReady();
+      // Announce (re)connection so the tracker can (re)send its open set.
+      this._connected.emit();
     };
 
     ws.onmessage = (event: MessageEvent) => {
@@ -122,4 +128,5 @@ export class LiveContentConnector implements ILiveContentConnector {
   private _ready: Promise<void>;
   private _resolveReady!: () => void;
   private _messageReceived = new Signal<this, LiveContentMessage>(this);
+  private _connected = new Signal<this, void>(this);
 }
