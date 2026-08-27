@@ -2,7 +2,7 @@
 # Distributed under the terms of the Modified BSD License.
 """Detect whether a real-time-collaboration (RTC) provider is active this session.
 
-When one is, jupyterlab-live-content disables itself (RTC already keeps open
+When one is, jupyter-live-content disables itself (RTC already keeps open
 documents in sync). Adapted from ``jupyterlab_chat.rtc_lib``: we only inspect
 the ``ServerApp`` and never import a provider.
 """

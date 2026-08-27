@@ -1,6 +1,6 @@
 # jupyter_live_content
 
-[![Github Actions Status](https://github.com/jupyter-ai-contrib/jupyterlab-live-content/workflows/Build/badge.svg)](https://github.com/jupyter-ai-contrib/jupyterlab-live-content/actions/workflows/build.yml)
+[![Github Actions Status](https://github.com/jupyter-ai-contrib/jupyter-live-content/workflows/Build/badge.svg)](https://github.com/jupyter-ai-contrib/jupyter-live-content/actions/workflows/build.yml)
 
 A JupyterLab extension that keeps open documents in sync with their file on
 disk. When a file changes on disk while you have it open — for example, an AI
@@ -50,8 +50,8 @@ or the `disable_rtc` trait), this extension stays active.
 - **Notebooks.** Reliably reconciling an out-of-band notebook edit with live
   in-memory state (so a benign change to one cell doesn't blow away work in
   another) is unsolved. See the discussion in
-  [#2](https://github.com/jupyter-ai-contrib/jupyterlab-live-content/issues/2)
-  and [#5](https://github.com/jupyter-ai-contrib/jupyterlab-live-content/issues/5).
+  [#2](https://github.com/jupyter-ai-contrib/jupyter-live-content/issues/2)
+  and [#5](https://github.com/jupyter-ai-contrib/jupyter-live-content/issues/5).
 - **More viewer types.** Other read-only viewers (CSV/TSV, etc.) could be added
   to the allowlist as their reload behavior is validated.
 - **PDFs.** JupyterLab 4 ships no built-in PDF document-widget viewer, so there

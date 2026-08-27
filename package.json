@@ -7,9 +7,9 @@
         "jupyterlab",
         "jupyterlab-extension"
     ],
-    "homepage": "https://github.com/jupyter-ai-contrib/jupyterlab-live-content",
+    "homepage": "https://github.com/jupyter-ai-contrib/jupyter-live-content",
     "bugs": {
-        "url": "https://github.com/jupyter-ai-contrib/jupyterlab-live-content/issues"
+        "url": "https://github.com/jupyter-ai-contrib/jupyter-live-content/issues"
     },
     "license": "BSD-3-Clause",
     "author": {
@@ -26,7 +26,7 @@
     "style": "style/index.css",
     "repository": {
         "type": "git",
-        "url": "https://github.com/jupyter-ai-contrib/jupyterlab-live-content.git"
+        "url": "https://github.com/jupyter-ai-contrib/jupyter-live-content.git"
     },
     "scripts": {
         "build": "jlpm build:lib && jlpm build:labextension:dev",
