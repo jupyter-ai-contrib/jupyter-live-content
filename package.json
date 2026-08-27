@@ -1,6 +1,6 @@
 {
     "name": "@jupyter-ai-contrib/live-content",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "A minimal JupyterLab extension that provides live content updates from the filesystem.",
     "keywords": [
         "jupyter",
