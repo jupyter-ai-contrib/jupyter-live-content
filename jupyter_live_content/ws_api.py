@@ -1,6 +1,6 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
-"""WebSocket API for ``jupyterlab-live-content``.
+"""WebSocket API for ``jupyter-live-content``.
 
 Two pieces live here:
 

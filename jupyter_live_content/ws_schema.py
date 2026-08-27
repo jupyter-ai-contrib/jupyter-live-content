@@ -1,6 +1,6 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
-"""Message schema for the ``jupyterlab-live-content`` WebSocket protocol.
+"""Message schema for the ``jupyter-live-content`` WebSocket protocol.
 
 The protocol is intentionally tiny. Every message is a JSON object with a
 ``type`` discriminator plus a small, fixed set of fields. Each message type is

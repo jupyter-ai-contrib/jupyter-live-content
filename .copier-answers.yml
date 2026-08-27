@@ -12,6 +12,6 @@ labextension_name: '@jupyter-ai-contrib/live-content'
 project_short_description: A minimal JupyterLab extension that provides live content
     updates from the filesystem.
 python_name: jupyter_live_content
-repository: https://github.com/jupyter-ai-contrib/jupyterlab-live-content
+repository: https://github.com/jupyter-ai-contrib/jupyter-live-content
 test: true
 

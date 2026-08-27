@@ -4,7 +4,7 @@ import { expect, test } from '@jupyterlab/galata';
  * Isolated E2E suite that only runs when an RTC provider is installed and
  * enabled (see the `LIVE_CONTENT_RTC` legs in `.github/workflows/build.yml`).
  *
- * When RTC is active, `jupyterlab-live-content` must stand completely down:
+ * When RTC is active, `jupyter-live-content` must stand completely down:
  * the server extension registers no WebSocket handler and starts no file
  * watcher, and the frontend opens no connection. These tests assert that from
  * a real browser against a real RTC server.
