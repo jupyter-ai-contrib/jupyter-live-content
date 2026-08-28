@@ -1,0 +1,4 @@
+# Generated benchmark output (charts, CSV, JSON)
+results/
+__pycache__/
+*.pyc
