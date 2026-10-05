@@ -32,3 +32,28 @@ async def test_ws_broadcasts_server_update_on_disk_change(jp_ws_fetch, jp_root_d
         }
     finally:
         ws.close()
+
+
+async def test_server_shutdown_stops_watchers(jp_serverapp, jp_ws_fetch, jp_root_dir):
+    """Server shutdown stops and awaits the watcher tasks. A watcher left
+    pending when the event loop stops keeps its non-daemon anyio worker thread
+    alive, so the server process never exits."""
+    (jp_root_dir / "live.txt").write_text("before")
+    manager = jp_serverapp.web_app.settings["live_content_manager"]
+
+    ws = await jp_ws_fetch("api", "live-content", "ws")
+    try:
+        ws.write_message(json.dumps({"type": "client_opened", "path": "live.txt"}))
+        for _ in range(50):
+            if manager._dir_tasks:
+                break
+            await asyncio.sleep(0.1)
+        tasks = list(manager._dir_tasks.values())
+        assert tasks, "watcher never started"
+
+        await jp_serverapp.cleanup_extensions()
+
+        assert manager._dir_tasks == {}
+        assert all(task.done() for task in tasks)
+    finally:
+        ws.close()

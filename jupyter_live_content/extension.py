@@ -7,6 +7,7 @@ registers the WebSocket handler at ``/api/live-content/ws``.
 """
 from __future__ import annotations
 
+from jupyter_server.extension.application import ExtensionApp
 from jupyter_server.utils import url_path_join
 
 from .rtc_lib import get_rtc_provider
@@ -81,3 +82,18 @@ def _load_jupyter_server_extension(server_app) -> None:
     web_app.add_handlers(".*$", [(ws_route, LiveContentWebSocketHandler)])
 
     server_app.log.info("Registered jupyter_live_content server extension")
+
+
+class LiveContentExtensionApp(ExtensionApp):
+    """Extension app wrapper, so the server calls :meth:`stop_extension` on
+    shutdown. Plain module extensions get no shutdown hook."""
+
+    name = "jupyter_live_content"
+
+    def initialize_handlers(self) -> None:
+        _load_jupyter_server_extension(self.serverapp)
+
+    async def stop_extension(self) -> None:
+        manager = self.serverapp.web_app.settings.get(MANAGER_SETTINGS_KEY)
+        if manager is not None:
+            await manager.stop_and_wait()

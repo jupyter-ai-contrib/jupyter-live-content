@@ -232,6 +232,21 @@ class LiveContentManager:
         for directory in list(self._dir_tasks):
             self._stop_dir(directory)
 
+    async def stop_and_wait(self, timeout: float = 10) -> None:
+        """Stop all watchers and wait (up to ``timeout`` seconds) for their tasks
+        to finish.
+
+        Must be awaited while the event loop is still running, i.e. during
+        server shutdown. ``awatch`` blocks in an anyio worker thread, which is
+        non-daemon and only exits once its watcher task has finished. If the
+        loop stops with a watcher task still pending, the thread never exits
+        and the interpreter hangs at exit joining it.
+        """
+        tasks = list(self._dir_tasks.values())
+        self.stop()
+        if tasks:
+            await asyncio.wait(tasks, timeout=timeout)
+
     async def _content_hash(self, api_path: str) -> Optional[str]:
         """Content hash of the file at ``api_path`` per the ContentsManager, or
         ``None`` if unavailable (in which case the client reloads).
